@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { Sentence } from "@/lib/sentenceData";
 
-export type SentenceStatus = "pending" | "inReview";
+export type SentenceStatus = "pending" | "added";
 
 export interface ReviewCard extends Sentence {
   /** Spaced-repetition interval in "rounds". Starts at 1, doubles on correct. */
