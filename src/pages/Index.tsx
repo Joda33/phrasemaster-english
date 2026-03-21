@@ -23,6 +23,8 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>("practice");
   const [isLoading, setIsLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const {
     sentences,
@@ -36,16 +38,40 @@ export default function Index() {
     markReviewedLearned,
   } = useLearning();
 
-  const handleGenerate = useCallback((words: string[]) => {
+  const handleGenerate = useCallback(async (words: string[]) => {
     setIsLoading(true);
-    // Simulate async call (replace with AI API call in future)
-    setTimeout(() => {
-      const result = generateSentences(words);
-      loadSentences(result);
-      setGenerated(true);
-      setIsLoading(false);
-    }, 800);
-  }, [loadSentences]);
+    setAiError(null);
+
+    // Try AI generation first; fall back to local bank on failure
+    const result = await generateSentencesAI(words);
+
+    if (result.error) {
+      const isQuota = result.error.includes("429") || result.error.includes("Limite");
+      const isPayment = result.error.includes("402") || result.error.includes("Créditos");
+
+      if (isQuota || isPayment) {
+        // Hard errors — show message and fallback
+        toast({
+          title: isPayment ? "Créditos insuficientes" : "Muitas requisições",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+
+      // Fallback to local sentence bank
+      toast({
+        title: "Usando banco de frases local",
+        description: "Não foi possível conectar à IA. Usando exemplos pré-definidos.",
+      });
+      const fallback = generateSentences(words);
+      loadSentences(fallback);
+    } else if (result.sentences) {
+      loadSentences(result.sentences);
+    }
+
+    setGenerated(true);
+    setIsLoading(false);
+  }, [loadSentences, toast]);
 
   const learnedCount = sentences.filter((s) => s.status === "learned").length;
   const pendingCount = sentences.filter((s) => s.status === "pending").length;
