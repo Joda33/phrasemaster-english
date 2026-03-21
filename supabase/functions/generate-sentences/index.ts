@@ -27,10 +27,10 @@ serve(async (req) => {
 
     const userPrompt = `You are an English learning assistant for Brazilian Portuguese speakers.
 Generate exactly ${count} example sentences in English using these words: ${wordList}.
-For each sentence, provide ONLY the translation of the keyword (1-5 words in Portuguese), NOT the full sentence.
+For each sentence, provide ONLY the translation of the keyword (1-5 words in Portuguese), NOT the full sentence translation.
 
-Respond ONLY with a valid JSON array, no markdown, no extra text:
-[{"word":"keyword in base form","en":"Full sentence in English.","wordTranslation":"tradução da palavra"}]`;
+Respond ONLY with a valid JSON array (no markdown, no extra text):
+[{"word":"keyword in base form as given","en":"Full English sentence.","wordTranslation":"tradução da palavra-chave"}]`;
 
     const response = await fetch(
       "https://api.ai.lovable.app/openai/v1/chat/completions",
@@ -39,6 +39,7 @@ Respond ONLY with a valid JSON array, no markdown, no extra text:
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
+          "User-Agent": "Deno/1.0",
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
@@ -50,16 +51,16 @@ Respond ONLY with a valid JSON array, no markdown, no extra text:
     );
 
     if (!response.ok) {
-      const errText = await response.text();
+      const errText = await response.text().catch(() => "");
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns segundos. (429)" }),
+          JSON.stringify({ error: "Limite de requisições atingido. (429)" }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Créditos insuficientes para gerar frases via IA. (402)" }),
+          JSON.stringify({ error: "Créditos insuficientes. (402)" }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -72,11 +73,10 @@ Respond ONLY with a valid JSON array, no markdown, no extra text:
     const data = await response.json();
     const content: string = data.choices?.[0]?.message?.content ?? "";
 
-    // Strip markdown code blocks if present
-    const jsonMatch = content.match(/\[[\s\S]*?\]/s);
+    const jsonMatch = content.match(/\[[\s\S]*\]/s);
     if (!jsonMatch) {
       return new Response(
-        JSON.stringify({ error: "Formato de resposta inválido da IA.", raw: content.slice(0, 200) }),
+        JSON.stringify({ error: "Formato de resposta inválido.", raw: content.slice(0, 300) }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
