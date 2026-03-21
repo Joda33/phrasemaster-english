@@ -1,53 +1,14 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const GATEWAY_URL = "https://api.ai.lovable.app/openai/v1";
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Tool schema for structured sentence output
-const SENTENCE_TOOL = {
-  type: "function",
-  function: {
-    name: "return_sentences",
-    description:
-      "Return a list of English sentences based on the provided words, each with a Brazilian Portuguese translation.",
-    parameters: {
-      type: "object",
-      properties: {
-        sentences: {
-          type: "array",
-          minItems: 5,
-          maxItems: 10,
-          items: {
-            type: "object",
-            properties: {
-              word: {
-                type: "string",
-                description: "The key word used in the sentence (one of the input words).",
-              },
-              en: {
-                type: "string",
-                description: "A natural, everyday English sentence using the word.",
-              },
-              pt: {
-                type: "string",
-                description: "The Brazilian Portuguese translation of the English sentence.",
-              },
-            },
-            required: ["word", "en", "pt"],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: ["sentences"],
-      additionalProperties: false,
-    },
-  },
-};
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -55,92 +16,98 @@ serve(async (req) => {
   try {
     const { words } = await req.json() as { words: string[] };
 
-    if (!words || !Array.isArray(words) || words.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Provide at least one word." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    if (!words || words.length === 0) {
+      return new Response(JSON.stringify({ error: "No words provided" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const wordList = words.map((w: string) => w.trim()).filter(Boolean).join(", ");
+    const count = Math.min(Math.max(words.length * 2, 5), 10);
 
-    const wordList = words.slice(0, 5).join(", ");
-    const count = Math.min(10, Math.max(5, words.length * 2));
+    const systemPrompt = `You are an English learning assistant for Brazilian Portuguese speakers. Always respond with valid JSON only — no markdown, no extra text.`;
 
-    const systemPrompt = `You are an English language learning assistant. 
-Your task is to create natural, useful example sentences for language learners.
-Focus on everyday situations, common phrases, and varied sentence structures.
-Each sentence should clearly demonstrate how the word is used in context.
-Vary the sentence complexity (simple, compound, complex) and tense (present, past, future, conditional).`;
+    const userPrompt = `Generate exactly ${count} example sentences in English using: ${wordList}.
 
-    const userPrompt = `Generate exactly ${count} English sentences (5 to 10) using the following words: ${wordList}.
-Rules:
-- Distribute the sentences evenly among all provided words
-- Use each word in its natural, most common everyday context
-- Mix different tenses and sentence structures
-- Sentences should be at B1–B2 level (intermediate English learner)
-- For each sentence, provide the accurate Brazilian Portuguese translation
-- Do NOT use overly formal or academic language`;
+For each sentence, provide ONLY the translation of the keyword (not the full sentence translation).
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+Respond with a JSON array:
+[
+  {
+    "word": "the keyword in base form as given",
+    "en": "Full sentence in English.",
+    "wordTranslation": "tradução da palavra-chave em português (1-5 palavras)"
+  }
+]`;
+
+    const response = await fetch(`${GATEWAY_URL}/chat/completions`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        tools: [SENTENCE_TOOL],
-        tool_choice: { type: "function", function: { name: "return_sentences" } },
+        temperature: 0.8,
+        max_tokens: 2000,
       }),
     });
 
     if (!response.ok) {
-      const text = await response.text();
+      const errText = await response.text();
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns instantes." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: `Limite de requisições atingido. Tente novamente. (429)` }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos em Settings → Workspace → Usage." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: `Créditos insuficientes para gerar frases via IA. (402)` }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      console.error("AI Gateway error:", response.status, text);
-      throw new Error(`AI Gateway error [${response.status}]: ${text}`);
+      return new Response(JSON.stringify({ error: `Erro na API: ${response.status} - ${errText}` }), {
+        status: response.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const content: string = data.choices?.[0]?.message?.content ?? "";
 
-    if (!toolCall?.function?.arguments) {
-      throw new Error("No tool call returned by AI model");
+    // Strip markdown code blocks if present
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      return new Response(JSON.stringify({ error: "Invalid AI response format", raw: content }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const parsed = JSON.parse(toolCall.function.arguments) as {
-      sentences: { word: string; en: string; pt: string }[];
-    };
+    const raw = JSON.parse(jsonMatch[0]) as Record<string, unknown>[];
 
-    return new Response(
-      JSON.stringify({ sentences: parsed.sentences }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (error) {
-    console.error("generate-sentences error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    const sentences = raw
+      .filter((s) => s.word && s.en && s.wordTranslation)
+      .map((s, i) => ({
+        id: `ai-${String(s.word).toLowerCase()}-${i}-${Date.now()}`,
+        word: String(s.word).toLowerCase().trim(),
+        en: String(s.en).trim(),
+        wordTranslation: String(s.wordTranslation).trim(),
+      }));
+
+    return new Response(JSON.stringify({ sentences }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: `Erro interno: ${err}` }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
