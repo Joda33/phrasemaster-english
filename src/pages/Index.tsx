@@ -1,12 +1,15 @@
 import { useState, useCallback } from "react";
 import { BookOpen, Layers, Trophy, Sparkles } from "lucide-react";
 import { generateSentences } from "@/lib/sentenceData";
+import { generateSentencesAI } from "@/lib/sentenceApi";
 import { useLearning } from "@/hooks/useLearning";
 import { SentenceCard } from "@/components/SentenceCard";
 import { ReviewSection } from "@/components/ReviewSection";
 import { Leaderboard } from "@/components/Leaderboard";
 import { WordInput } from "@/components/WordInput";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 type Tab = "practice" | "review" | "leaderboard";
 
