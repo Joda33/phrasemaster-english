@@ -136,7 +136,7 @@ export default function Index() {
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
                 <div className="flex-1 rounded-2xl bg-accent/10 border border-accent/30 py-3 px-4 text-center">
-                  <p className="font-bold text-amber-600 text-lg tabular-nums">
+                  <p className="font-bold text-accent-foreground text-lg tabular-nums">
                     {reviewSentences.filter(s => s.status !== "learned").length}
                   </p>
                   <p className="text-xs text-muted-foreground">Revisar</p>
