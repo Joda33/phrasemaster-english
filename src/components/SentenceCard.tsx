@@ -1,18 +1,38 @@
 import { useState } from "react";
-import { Volume2, CheckCircle2, Clock, Check } from "lucide-react";
-import type { TrackedSentence } from "@/hooks/useLearning";
+import { Volume2, BookmarkPlus, Check } from "lucide-react";
+import type { Sentence } from "@/lib/sentenceData";
 
 interface SentenceCardProps {
-  sentence: TrackedSentence;
+  sentence: Sentence & { status: "pending" | "added" };
   index: number;
-  onLearn: (id: string) => void;
-  onReview: (id: string) => void;
+  onAddToReview: (id: string) => void;
 }
 
-export function SentenceCard({ sentence, index, onLearn, onReview }: SentenceCardProps) {
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
+/** Highlights the keyword within the sentence text */
+function HighlightedSentence({ text, keyword }: { text: string; keyword: string }) {
+  const regex = new RegExp(`(\\b${keyword}\\w*\\b)`, "gi");
+  const parts = text.split(regex);
+  return (
+    <span>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark
+            key={i}
+            className="bg-primary/15 text-primary font-bold rounded px-0.5 not-italic"
+          >
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
 
+export function SentenceCard({ sentence, index, onAddToReview }: SentenceCardProps) {
+  const [speaking, setSpeaking] = useState(false);
+  const isAdded = sentence.status === "added";
   const staggerClass = `stagger-${Math.min(index + 1, 8)}`;
 
   function handleSpeak() {
@@ -26,18 +46,14 @@ export function SentenceCard({ sentence, index, onLearn, onReview }: SentenceCar
     window.speechSynthesis.speak(utterance);
   }
 
-  const isLearned = sentence.status === "learned";
-  const isReview = sentence.status === "review";
-
   return (
     <div
       className={`
         animate-fade-up ${staggerClass}
-        relative rounded-2xl bg-card border border-border shadow-card
+        rounded-2xl bg-card border border-border shadow-card
         transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5
         overflow-hidden
-        ${isLearned ? "ring-2 ring-success/40 bg-success/5" : ""}
-        ${isReview ? "ring-2 ring-accent/50 bg-accent/5" : ""}
+        ${isAdded ? "ring-2 ring-primary/30 bg-primary/5" : ""}
       `}
     >
       {/* Word tag */}
@@ -45,43 +61,31 @@ export function SentenceCard({ sentence, index, onLearn, onReview }: SentenceCar
         <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           #{sentence.word}
         </span>
-        {isLearned && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-success bg-success/10 px-2.5 py-0.5 rounded-full">
-            <CheckCircle2 size={12} /> Aprendida
-          </span>
-        )}
-        {isReview && !isLearned && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-accent/20 px-2.5 py-0.5 rounded-full">
-            <Clock size={12} /> Revisar depois
+        {isAdded && (
+          <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
+            <Check size={11} /> Na revisão
           </span>
         )}
       </div>
 
       {/* Sentence */}
-      <div className="px-5 pb-3">
-        <p className="text-base font-semibold text-foreground leading-relaxed">
-          {sentence.en}
+      <div className="px-5 pb-2">
+        <p className="text-base font-medium text-foreground leading-relaxed">
+          <HighlightedSentence text={sentence.en} keyword={sentence.word} />
         </p>
+      </div>
 
-        {/* Translation reveal */}
-        <button
-          className="mt-2 text-sm text-muted-foreground hover:text-foreground transition-colors underline decoration-dashed underline-offset-4 cursor-pointer"
-          onClick={() => setShowTranslation((v) => !v)}
-          aria-expanded={showTranslation}
-        >
-          {showTranslation ? "Ocultar tradução" : "Ver tradução"}
-        </button>
-
-        {showTranslation && (
-          <p className="mt-1.5 text-sm text-muted-foreground animate-fade-in italic">
-            {sentence.pt}
-          </p>
-        )}
+      {/* Keyword translation */}
+      <div className="px-5 pb-3">
+        <span className="inline-flex items-center gap-1.5 text-sm bg-muted rounded-xl px-3 py-1.5 text-foreground">
+          <span className="font-bold text-primary">{sentence.word}</span>
+          <span className="text-muted-foreground">=</span>
+          <span className="font-semibold">{sentence.wordTranslation}</span>
+        </span>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2 px-5 pb-4 pt-1">
-        {/* Audio button */}
         <button
           onClick={handleSpeak}
           className={`
@@ -92,7 +96,6 @@ export function SentenceCard({ sentence, index, onLearn, onReview }: SentenceCar
               : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground"
             }
           `}
-          title="Ouvir pronúncia"
         >
           <Volume2 size={13} />
           {speaking ? "Falando..." : "Ouvir"}
@@ -100,39 +103,20 @@ export function SentenceCard({ sentence, index, onLearn, onReview }: SentenceCar
 
         <div className="flex-1" />
 
-        {/* Review button */}
-        {!isLearned && (
-          <button
-            onClick={() => onReview(sentence.id)}
-            className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border
-              transition-all duration-200 active:scale-95
-              ${isReview
-                ? "bg-accent text-accent-foreground border-accent/60"
-                : "bg-accent/10 text-amber-700 border-accent/40 hover:bg-accent/20"
-              }
-            `}
-          >
-            <Clock size={13} />
-            Revisar
-          </button>
-        )}
-
-        {/* Learn button */}
         <button
-          onClick={() => onLearn(sentence.id)}
-          disabled={isLearned}
+          onClick={() => !isAdded && onAddToReview(sentence.id)}
+          disabled={isAdded}
           className={`
             flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold border
             transition-all duration-200 active:scale-95
-            ${isLearned
-              ? "bg-success/15 text-success border-success/30 cursor-default"
-              : "bg-success text-success-foreground border-success/60 hover:bg-primary-hover shadow-sm"
+            ${isAdded
+              ? "bg-primary/10 text-primary border-primary/30 cursor-default"
+              : "bg-primary text-primary-foreground border-primary/60 hover:bg-primary/90 shadow-sm"
             }
           `}
         >
-          <Check size={13} />
-          {isLearned ? "Aprendida!" : "Aprendi"}
+          <BookmarkPlus size={13} />
+          {isAdded ? "Adicionada!" : "Adicionar à revisão"}
         </button>
       </div>
     </div>

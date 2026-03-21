@@ -4,45 +4,43 @@ import { generateSentences } from "@/lib/sentenceData";
 import { generateSentencesAI } from "@/lib/sentenceApi";
 import { useLearning } from "@/hooks/useLearning";
 import { SentenceCard } from "@/components/SentenceCard";
-import { ReviewSection } from "@/components/ReviewSection";
+import { AnkiReview } from "@/components/AnkiReview";
 import { Leaderboard } from "@/components/Leaderboard";
 import { WordInput } from "@/components/WordInput";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
-type Tab = "practice" | "review" | "leaderboard";
+type Tab = "generate" | "review" | "leaderboard";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "practice",    label: "Praticar",  icon: <Sparkles size={16} /> },
-  { id: "review",      label: "Revisão",   icon: <Layers size={16} /> },
-  { id: "leaderboard", label: "Ranking",   icon: <Trophy size={16} /> },
+  { id: "generate",    label: "Gerar Frases", icon: <Sparkles size={15} /> },
+  { id: "review",      label: "Revisão",      icon: <Layers size={15} /> },
+  { id: "leaderboard", label: "Ranking",      icon: <Trophy size={15} /> },
 ];
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState<Tab>("practice");
+  const [activeTab, setActiveTab] = useState<Tab>("generate");
   const [isLoading, setIsLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const {
     sentences,
     score,
     scorePop,
-    reviewSentences,
+    reviewCards,
+    getDueCards,
     loadSentences,
-    markLearned,
-    markReview,
-    removeFromReview,
-    markReviewedLearned,
+    addToReview,
+    markCorrect,
+    markWrong,
+    removeCard,
   } = useLearning();
 
   const handleGenerate = useCallback(async (words: string[]) => {
     setIsLoading(true);
-    setAiError(null);
 
-    // Try AI generation first; fall back to local bank on failure
     const result = await generateSentencesAI(words);
 
     if (result.error) {
@@ -50,7 +48,6 @@ export default function Index() {
       const isPayment = result.error.includes("402") || result.error.includes("Créditos");
 
       if (isQuota || isPayment) {
-        // Hard errors — show message and fallback
         toast({
           title: isPayment ? "Créditos insuficientes" : "Muitas requisições",
           description: result.error,
@@ -58,13 +55,11 @@ export default function Index() {
         });
       }
 
-      // Fallback to local sentence bank
       toast({
         title: "Usando banco de frases local",
         description: "Não foi possível conectar à IA. Usando exemplos pré-definidos.",
       });
-      const fallback = generateSentences(words);
-      loadSentences(fallback);
+      loadSentences(generateSentences(words));
     } else if (result.sentences) {
       loadSentences(result.sentences);
     }
@@ -73,12 +68,12 @@ export default function Index() {
     setIsLoading(false);
   }, [loadSentences, toast]);
 
-  const learnedCount = sentences.filter((s) => s.status === "learned").length;
-  const pendingCount = sentences.filter((s) => s.status === "pending").length;
+  const dueCards = getDueCards();
+  const reviewBadge = dueCards.length > 0 ? dueCards.length : (reviewCards.length > 0 ? "·" : null);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="sticky top-0 z-30 bg-card/90 backdrop-blur border-b border-border">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -91,15 +86,12 @@ export default function Index() {
         </div>
       </header>
 
-      {/* ── Tab bar ── */}
+      {/* Tab bar */}
       <nav className="sticky top-14 z-20 bg-background/90 backdrop-blur border-b border-border">
         <div className="max-w-xl mx-auto px-4">
           <div className="flex">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
-              const badge = tab.id === "review" && reviewSentences.length > 0
-                ? reviewSentences.filter(s => s.status !== "learned").length
-                : null;
               return (
                 <button
                   key={tab.id}
@@ -115,9 +107,9 @@ export default function Index() {
                 >
                   {tab.icon}
                   {tab.label}
-                  {badge !== null && (
-                    <span className="absolute top-2 right-[calc(50%-28px)] w-4 h-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center">
-                      {badge}
+                  {tab.id === "review" && reviewBadge !== null && (
+                    <span className="absolute top-2 right-[calc(50%-32px)] min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {reviewBadge}
                     </span>
                   )}
                 </button>
@@ -127,24 +119,22 @@ export default function Index() {
         </div>
       </nav>
 
-      {/* ── Content ── */}
+      {/* Content */}
       <main className="max-w-xl mx-auto px-4 py-6 pb-16">
 
-        {/* ── PRACTICE TAB ── */}
-        {activeTab === "practice" && (
+        {/* ── GENERATE TAB ── */}
+        {activeTab === "generate" && (
           <div className="space-y-6">
-            {/* Hero callout */}
             {!generated && (
               <div className="animate-fade-up rounded-3xl p-6 text-primary-foreground text-center shadow-score hero-gradient">
                 <div className="text-4xl mb-3 animate-bounce-small">📖</div>
                 <h1 className="text-xl font-bold mb-1">Aprenda inglês com frases reais</h1>
                 <p className="text-sm opacity-85">
-                  Digite palavras que você quer dominar e gere frases contextualizadas para memorizar de verdade.
+                  Digite palavras que você quer dominar e gere frases contextualizadas com tradução da palavra-chave.
                 </p>
               </div>
             )}
 
-            {/* Input section */}
             <div className="bg-card rounded-3xl border border-border shadow-card p-5">
               <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <Sparkles size={15} className="text-primary" />
@@ -158,52 +148,33 @@ export default function Index() {
               <WordInput onGenerate={handleGenerate} isLoading={isLoading} />
             </div>
 
-            {/* Stats strip */}
-            {generated && sentences.length > 0 && (
-              <div className="animate-scale-in flex items-center gap-3 text-sm">
-                <div className="flex-1 rounded-2xl bg-success/10 border border-success/20 py-3 px-4 text-center">
-                  <p className="font-bold text-success text-lg tabular-nums">{learnedCount}</p>
-                  <p className="text-xs text-muted-foreground">Aprendidas</p>
-                </div>
-                <div className="flex-1 rounded-2xl bg-muted border border-border py-3 px-4 text-center">
-                  <p className="font-bold text-foreground text-lg tabular-nums">{pendingCount}</p>
-                  <p className="text-xs text-muted-foreground">Pendentes</p>
-                </div>
-                <div className="flex-1 rounded-2xl bg-accent/10 border border-accent/30 py-3 px-4 text-center">
-                  <p className="font-bold text-accent-foreground text-lg tabular-nums">
-                    {reviewSentences.filter(s => s.status !== "learned").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Revisar</p>
-                </div>
+            {/* Loading skeletons */}
+            {isLoading && (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`h-36 rounded-2xl bg-muted animate-pulse stagger-${i + 1}`} />
+                ))}
               </div>
             )}
 
             {/* Sentence cards */}
-            {sentences.length > 0 && (
+            {!isLoading && sentences.length > 0 && (
               <div className="space-y-3">
-                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <BookOpen size={15} className="text-primary" />
-                  Suas frases ({sentences.length})
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <BookOpen size={15} className="text-primary" />
+                    Suas frases ({sentences.length})
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    {sentences.filter(s => s.status === "added").length} adicionada{sentences.filter(s => s.status === "added").length !== 1 ? "s" : ""}
+                  </span>
+                </div>
                 {sentences.map((sentence, idx) => (
                   <SentenceCard
                     key={sentence.id}
                     sentence={sentence}
                     index={idx}
-                    onLearn={markLearned}
-                    onReview={markReview}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Empty state after generate */}
-            {isLoading && (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-28 rounded-2xl bg-muted animate-pulse stagger-${i + 1}`}
+                    onAddToReview={addToReview}
                   />
                 ))}
               </div>
@@ -215,15 +186,20 @@ export default function Index() {
         {activeTab === "review" && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-base font-bold text-foreground">Lista de Revisão</h2>
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Layers size={16} className="text-primary" />
+                Revisão Espaçada
+              </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Frases que você quer praticar mais antes de marcar como aprendidas.
+                Estilo Anki: acerte para ver menos, erre para ver mais. +10pts por acerto, −5pts por erro.
               </p>
             </div>
-            <ReviewSection
-              sentences={reviewSentences}
-              onLearn={markReviewedLearned}
-              onRemove={removeFromReview}
+            <AnkiReview
+              cards={dueCards}
+              allCards={reviewCards}
+              onCorrect={markCorrect}
+              onWrong={markWrong}
+              onRemove={removeCard}
             />
           </div>
         )}
@@ -233,11 +209,11 @@ export default function Index() {
           <div className="space-y-4">
             <div>
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Trophy size={16} className="text-accent" />
+                <Trophy size={16} className="text-primary" />
                 Ranking da Semana
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Continue aprendendo para subir no ranking! +10 pts por frase aprendida.
+                +10 pts por acerto · −5 pts por erro
               </p>
             </div>
             <Leaderboard userScore={score} />
