@@ -9,62 +9,65 @@
 
 @layer base {
   :root {
-    /* Brand */
-    --primary:         142 71% 40%;
+    /* Brand — Primary: #4A90E2 = hsl(210,72%,59%) */
+    --primary:         210 72% 56%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover:   142 71% 35%;
+    --primary-hover:   210 72% 48%;
 
-    --accent:          45 95% 52%;
+    /* Accent: warm amber */
+    --accent:          38 95% 58%;
     --accent-foreground: 30 80% 20%;
 
-    /* Surfaces */
-    --background:      210 20% 98%;
-    --foreground:      220 25% 15%;
+    /* Surfaces — Background: #F5F7FA */
+    --background:      220 33% 97%;
+    --foreground:      220 25% 12%;
 
     --card:            0 0% 100%;
-    --card-foreground: 220 25% 15%;
+    --card-foreground: 220 25% 12%;
 
     --popover:         0 0% 100%;
-    --popover-foreground: 220 25% 15%;
+    --popover-foreground: 220 25% 12%;
 
     /* Muted / Secondary */
-    --secondary:       142 40% 95%;
-    --secondary-foreground: 142 50% 30%;
+    --secondary:       210 40% 95%;
+    --secondary-foreground: 210 50% 30%;
 
-    --muted:           210 20% 94%;
-    --muted-foreground: 220 15% 50%;
+    --muted:           220 16% 94%;
+    --muted-foreground: 220 10% 50%;
 
     /* States */
-    --destructive:     4 86% 58%;
+    /* Destructive: #E74C3C = hsl(5,77%,57%) */
+    --destructive:     5 77% 57%;
     --destructive-foreground: 0 0% 100%;
 
-    --success:         142 71% 40%;
+    /* Success: #27AE60 = hsl(145,63%,42%) */
+    --success:         145 63% 42%;
     --success-foreground: 0 0% 100%;
 
-    --warning:         45 95% 52%;
-    --warning-foreground: 28 70% 28%;
+    --warning:         38 95% 58%;
+    --warning-foreground: 28 70% 20%;
 
     /* UI primitives */
-    --border:          210 20% 88%;
-    --input:           210 20% 92%;
-    --ring:            142 71% 40%;
+    --border:          220 16% 88%;
+    --input:           220 16% 91%;
+    --ring:            210 72% 56%;
 
     --radius:          0.75rem;
 
     /* Sidebar (kept for shadcn compat) */
     --sidebar-background:         0 0% 98%;
     --sidebar-foreground:         240 5.3% 26.1%;
-    --sidebar-primary:            240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent:             240 4.8% 95.9%;
+    --sidebar-primary:            210 72% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:             220 16% 94%;
     --sidebar-accent-foreground:  240 5.9% 10%;
-    --sidebar-border:             220 13% 91%;
-    --sidebar-ring:               142 71% 40%;
+    --sidebar-border:             220 16% 88%;
+    --sidebar-ring:               210 72% 56%;
 
     /* App-specific tokens */
-    --score-glow: 0 8px 32px hsl(142 71% 40% / 0.25);
-    --card-shadow: 0 2px 16px hsl(220 25% 15% / 0.07);
-    --card-shadow-hover: 0 8px 32px hsl(142 71% 40% / 0.15);
+    --score-glow: 0 8px 32px hsl(210 72% 56% / 0.28);
+    --card-shadow: 0 2px 16px hsl(220 25% 12% / 0.07);
+    --card-shadow-hover: 0 8px 32px hsl(210 72% 56% / 0.15);
   }
 }
 
