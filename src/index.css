@@ -117,6 +117,11 @@
 .animate-bounce-small { animation: bounce-small 2s ease-in-out infinite; }
 .animate-score-pop    { animation: score-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
 
+/* Hero gradient */
+.hero-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(142 60% 33%) 100%);
+}
+
 /* Stagger helpers */
 .stagger-1 { animation-delay: 60ms;  }
 .stagger-2 { animation-delay: 120ms; }

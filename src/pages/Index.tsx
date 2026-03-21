@@ -106,7 +106,7 @@ export default function Index() {
           <div className="space-y-6">
             {/* Hero callout */}
             {!generated && (
-              <div className="animate-fade-up rounded-3xl bg-gradient-to-br from-primary to-secondary-foreground/80 p-6 text-primary-foreground text-center shadow-score">
+              <div className="animate-fade-up rounded-3xl p-6 text-primary-foreground text-center shadow-score hero-gradient">
                 <div className="text-4xl mb-3 animate-bounce-small">📖</div>
                 <h1 className="text-xl font-bold mb-1">Aprenda inglês com frases reais</h1>
                 <p className="text-sm opacity-85">
