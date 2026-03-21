@@ -239,6 +239,7 @@ export default function Index() {
           </div>
         )}
       </main>
+      <Toaster />
     </div>
   );
 }
