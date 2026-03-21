@@ -150,6 +150,11 @@ export default function Index() {
                 <Sparkles size={15} className="text-primary" />
                 Escolha suas palavras
               </h2>
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+                  <Sparkles size={10} /> Powered by Gemini AI
+                </span>
+              </div>
               <WordInput onGenerate={handleGenerate} isLoading={isLoading} />
             </div>
 
