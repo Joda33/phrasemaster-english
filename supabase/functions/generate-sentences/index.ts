@@ -26,20 +26,12 @@ Deno.serve(async (req) => {
     const wordList = words.map((w: string) => w.trim()).filter(Boolean).join(", ");
     const count = Math.min(Math.max(words.length * 2, 5), 10);
 
-    const systemPrompt = `You are an English learning assistant for Brazilian Portuguese speakers. Always respond with valid JSON only — no markdown, no extra text.`;
+    const userPrompt = `You are an English learning assistant for Brazilian Portuguese speakers.
+Generate exactly ${count} example sentences in English using these words: ${wordList}.
+For each sentence, provide ONLY the translation of the keyword (1-5 words in Portuguese), NOT the full sentence.
 
-    const userPrompt = `Generate exactly ${count} example sentences in English using: ${wordList}.
-
-For each sentence, provide ONLY the translation of the keyword (not the full sentence translation).
-
-Respond with a JSON array:
-[
-  {
-    "word": "the keyword in base form as given",
-    "en": "Full sentence in English.",
-    "wordTranslation": "tradução da palavra-chave em português (1-5 palavras)"
-  }
-]`;
+Respond ONLY with a JSON array, no markdown:
+[{"word":"keyword","en":"Full sentence.","wordTranslation":"tradução da palavra"}]`;
 
     const response = await fetch(`${GATEWAY_URL}/chat/completions`, {
       method: "POST",
@@ -49,10 +41,7 @@ Respond with a JSON array:
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: [{ role: "user", content: userPrompt }],
         temperature: 0.8,
         max_tokens: 2000,
       }),
@@ -61,13 +50,13 @@ Respond with a JSON array:
     if (!response.ok) {
       const errText = await response.text();
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: `Limite de requisições atingido. Tente novamente. (429)` }), {
+        return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente. (429)" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: `Créditos insuficientes para gerar frases via IA. (402)` }), {
+        return new Response(JSON.stringify({ error: "Créditos insuficientes. (402)" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -91,7 +80,6 @@ Respond with a JSON array:
     }
 
     const raw = JSON.parse(jsonMatch[0]) as Record<string, unknown>[];
-
     const sentences = raw
       .filter((s) => s.word && s.en && s.wordTranslation)
       .map((s, i) => ({
@@ -105,7 +93,8 @@ Respond with a JSON array:
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: `Erro interno: ${err}` }), {
+    const msg = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: `Erro interno: ${msg}` }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
