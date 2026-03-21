@@ -1,12 +1,15 @@
 import { useState, useCallback } from "react";
 import { BookOpen, Layers, Trophy, Sparkles } from "lucide-react";
 import { generateSentences } from "@/lib/sentenceData";
+import { generateSentencesAI } from "@/lib/sentenceApi";
 import { useLearning } from "@/hooks/useLearning";
 import { SentenceCard } from "@/components/SentenceCard";
 import { ReviewSection } from "@/components/ReviewSection";
 import { Leaderboard } from "@/components/Leaderboard";
 import { WordInput } from "@/components/WordInput";
 import { ScoreDisplay } from "@/components/ScoreDisplay";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 type Tab = "practice" | "review" | "leaderboard";
 
@@ -20,6 +23,8 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>("practice");
   const [isLoading, setIsLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const {
     sentences,
@@ -33,16 +38,40 @@ export default function Index() {
     markReviewedLearned,
   } = useLearning();
 
-  const handleGenerate = useCallback((words: string[]) => {
+  const handleGenerate = useCallback(async (words: string[]) => {
     setIsLoading(true);
-    // Simulate async call (replace with AI API call in future)
-    setTimeout(() => {
-      const result = generateSentences(words);
-      loadSentences(result);
-      setGenerated(true);
-      setIsLoading(false);
-    }, 800);
-  }, [loadSentences]);
+    setAiError(null);
+
+    // Try AI generation first; fall back to local bank on failure
+    const result = await generateSentencesAI(words);
+
+    if (result.error) {
+      const isQuota = result.error.includes("429") || result.error.includes("Limite");
+      const isPayment = result.error.includes("402") || result.error.includes("Créditos");
+
+      if (isQuota || isPayment) {
+        // Hard errors — show message and fallback
+        toast({
+          title: isPayment ? "Créditos insuficientes" : "Muitas requisições",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+
+      // Fallback to local sentence bank
+      toast({
+        title: "Usando banco de frases local",
+        description: "Não foi possível conectar à IA. Usando exemplos pré-definidos.",
+      });
+      const fallback = generateSentences(words);
+      loadSentences(fallback);
+    } else if (result.sentences) {
+      loadSentences(result.sentences);
+    }
+
+    setGenerated(true);
+    setIsLoading(false);
+  }, [loadSentences, toast]);
 
   const learnedCount = sentences.filter((s) => s.status === "learned").length;
   const pendingCount = sentences.filter((s) => s.status === "pending").length;
@@ -121,6 +150,11 @@ export default function Index() {
                 <Sparkles size={15} className="text-primary" />
                 Escolha suas palavras
               </h2>
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+                  <Sparkles size={10} /> Powered by Gemini AI
+                </span>
+              </div>
               <WordInput onGenerate={handleGenerate} isLoading={isLoading} />
             </div>
 
@@ -210,6 +244,7 @@ export default function Index() {
           </div>
         )}
       </main>
+      <Toaster />
     </div>
   );
 }
