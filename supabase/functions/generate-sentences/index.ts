@@ -1,20 +1,18 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
-const GATEWAY_URL = "https://api.ai.lovable.app/openai/v1";
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { words } = await req.json() as { words: string[] };
+    const { words } = (await req.json()) as { words: string[] };
 
     if (!words || words.length === 0) {
       return new Response(JSON.stringify({ error: "No words provided" }), {
@@ -23,6 +21,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
     const wordList = words.map((w: string) => w.trim()).filter(Boolean).join(", ");
     const count = Math.min(Math.max(words.length * 2, 5), 10);
 
@@ -30,53 +29,56 @@ Deno.serve(async (req) => {
 Generate exactly ${count} example sentences in English using these words: ${wordList}.
 For each sentence, provide ONLY the translation of the keyword (1-5 words in Portuguese), NOT the full sentence.
 
-Respond ONLY with a JSON array, no markdown:
-[{"word":"keyword","en":"Full sentence.","wordTranslation":"tradução da palavra"}]`;
+Respond ONLY with a valid JSON array, no markdown, no extra text:
+[{"word":"keyword in base form","en":"Full sentence in English.","wordTranslation":"tradução da palavra"}]`;
 
-    const response = await fetch(`${GATEWAY_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content: userPrompt }],
-        temperature: 0.8,
-        max_tokens: 2000,
-      }),
-    });
+    const response = await fetch(
+      "https://api.ai.lovable.app/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: userPrompt }],
+          temperature: 0.8,
+          max_tokens: 2000,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente. (429)" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em alguns segundos. (429)" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. (402)" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Créditos insuficientes para gerar frases via IA. (402)" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-      return new Response(JSON.stringify({ error: `Erro na API: ${response.status} - ${errText}` }), {
-        status: response.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: `Erro na API: ${response.status} - ${errText}` }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
     const content: string = data.choices?.[0]?.message?.content ?? "";
 
     // Strip markdown code blocks if present
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    const jsonMatch = content.match(/\[[\s\S]*?\]/s);
     if (!jsonMatch) {
-      return new Response(JSON.stringify({ error: "Invalid AI response format", raw: content }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Formato de resposta inválido da IA.", raw: content.slice(0, 200) }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const raw = JSON.parse(jsonMatch[0]) as Record<string, unknown>[];
