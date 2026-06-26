@@ -1,5 +1,3 @@
-Segue um README.md estruturado para uso profissional no GitHub.
-
 # 🚀 SentenceMiner
 
 **SentenceMiner** é uma plataforma de aprendizado de idiomas desenvolvida para auxiliar estudantes a expandirem seu vocabulário através da geração de frases contextualizadas. Utilizando Inteligência Artificial, a aplicação cria exemplos naturais e relevantes para facilitar a memorização de novas palavras e expressões.
