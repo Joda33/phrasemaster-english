@@ -1,1 +1,4 @@
-project_id = "edbowkwdbqucrpevrwjz"
+project_id = "clheyjcgyjskgjhqpquj"
+
+[functions.generate-sentences]
+verify_jwt = false

@@ -39,10 +39,24 @@ export function WordInput({ onGenerate, isLoading }: WordInputProps) {
   }
 
   function handleGenerate() {
-    const allWords = [...words];
-    if (inputValue.trim()) allWords.push(inputValue.trim());
-    if (allWords.length === 0) return;
-    onGenerate(allWords);
+    // Garante que não haverá duplicatas usando um Set
+    const uniqueWords = new Set([...words]);
+    
+    // Trata e limpa o texto que ainda estiver solto no input
+    const rawInput = inputValue.trim().toLowerCase();
+    if (rawInput) {
+      uniqueWords.add(rawInput);
+    }
+
+    const finalWords = Array.from(uniqueWords);
+    if (finalWords.length === 0) return;
+
+    // Dispara a função principal com os dados higienizados
+    onGenerate(finalWords);
+    
+    // Reseta o input e limpa o array local de tags na tela para o próximo ciclo
+    setInputValue("");
+    setWords([]);
   }
 
   return (
@@ -101,27 +115,28 @@ export function WordInput({ onGenerate, isLoading }: WordInputProps) {
         </div>
       </div>
 
-      {/* Generate button */}
+      {/* Generate button - Estrutura estável sem remover o nó do DOM */}
       <button
         onClick={handleGenerate}
         disabled={isLoading || (words.length === 0 && !inputValue.trim())}
-        className="
+        className={`
           w-full flex items-center justify-center gap-2 py-4 rounded-2xl
           text-base font-bold text-primary-foreground bg-primary
           hover:bg-primary-hover active:scale-[0.98]
           disabled:opacity-50 disabled:cursor-not-allowed
           shadow-score transition-all duration-200
-        "
+          ${isLoading ? "cursor-wait" : ""}
+        `}
       >
         {isLoading ? (
           <>
             <div className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            Gerando frases...
+            <span>Gerando frases...</span>
           </>
         ) : (
           <>
             <Sparkles size={18} />
-            Gerar frases
+            <span>Gerar frases</span>
           </>
         )}
       </button>
