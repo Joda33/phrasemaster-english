@@ -1,62 +1,145 @@
-# PhraseMaster English / SentenceMiner
+Segue um README.md estruturado para uso profissional no GitHub.
 
-**Domine o inglês através de frases autênticas e contextualizadas.**  
-SentenceMiner é uma plataforma moderna de aprendizado de idiomas que gera frases personalizadas e imersivas usando IA, ajudando estudantes a expandir vocabulário e compreensão contextual de forma eficiente.
+# 🚀 SentenceMiner
 
-## ✨ Funcionalidades Principais
+**SentenceMiner** é uma plataforma de aprendizado de idiomas desenvolvida para auxiliar estudantes a expandirem seu vocabulário através da geração de frases contextualizadas. Utilizando Inteligência Artificial, a aplicação cria exemplos naturais e relevantes para facilitar a memorização de novas palavras e expressões.
 
-- **Geração de frases contextualizadas** com a API da Groq para alta qualidade e velocidade.
-- **Interface intuitiva e responsiva** construída com React e Tailwind CSS.
-- **Armazenamento e autenticação seguros** via Supabase.
-- **Edge Functions** para processamento serverless eficiente e escalável.
-- **Foco em imersão**: frases reais, variadas e adaptadas ao nível do usuário.
-- **Experiência de aprendizado gamificada** e progressiva.
+O projeto combina uma interface moderna construída com React e Tailwind CSS, processamento serverless com Supabase Edge Functions e geração de conteúdo por meio da API da Groq, proporcionando uma experiência rápida, escalável e eficiente.
 
-## 🛠 Stack Tecnológica
+---
 
-### Frontend
-- **React** + **Vite** (build tool moderno e rápido)
-- **Tailwind CSS** (estilização utilitária e design responsivo)
+# ✨ Funcionalidades Principais
 
-### Backend / Banco de Dados
-- **Supabase** (PostgreSQL, autenticação e Edge Functions)
+* Geração de frases contextualizadas utilizando Inteligência Artificial.
+* Interface moderna e responsiva.
+* Integração com Supabase para autenticação e serviços backend.
+* Uso de Edge Functions para processamento seguro das requisições à IA.
+* Comunicação com a API da Groq para geração dinâmica de conteúdo.
+* Arquitetura otimizada utilizando Vite para desenvolvimento rápido.
+* Código organizado e preparado para deploy na Vercel.
 
-### IA
-- **Groq API** (inferência de LLM ultra-rápida para geração de conteúdo)
+---
 
-### Deploy
-- **Vercel** (frontend) + Supabase (backend e edge functions)
+# 🛠️ Stack Tecnológica
 
-## 🚀 Configuração Local
+## Frontend
 
-### 1. Clone o repositório
+* React
+* Vite
+* Tailwind CSS
+* JavaScript (ES6+)
+
+## Backend
+
+* Supabase
+* Supabase Edge Functions
+
+## Inteligência Artificial
+
+* Groq API (LLMs)
+
+## Deploy
+
+* Vercel
+
+---
+
+# ⚙️ Configuração Local
+
+## 1. Clone o repositório
+
 ```bash
 git clone https://github.com/Joda33/phrasemaster-english.git
-cd phrasemaster-english
-2. Instale as dependências
-Bashnpm install
-3. Configure as variáveis de ambiente
-Crie um arquivo .env na raiz do projeto com o seguinte conteúdo:
-envVITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
-# Opcional: outras chaves conforme necessário (ex: Groq API key se exposta no client-side)
-Importante: Mantenha as chaves de API (Supabase e Groq) seguras. Nunca commite o arquivo .env no repositório. As Edge Functions do Supabase lidam com chaves sensíveis no lado do servidor.
-4. Execute o projeto em modo desenvolvimento
-Bashnpm run dev
-A aplicação estará disponível em http://localhost:5173 (padrão do Vite).
-🌐 Deploy na Vercel
+```
 
-Faça fork ou importe o repositório diretamente na Vercel.
-Conecte o projeto ao seu repositório GitHub.
-Na seção Environment Variables, adicione:
+## 2. Acesse o diretório
+
+```bash
+cd phrasemaster-english
+```
+
+## 3. Instale as dependências
+
+```bash
+npm install
+```
+
+## 4. Configure as variáveis de ambiente
+
+Crie um arquivo chamado:
+
+```text
+.env
+```
+
+Adicione as seguintes variáveis:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+> **Importante**
+>
+> As credenciais do Supabase permitem que o frontend se comunique com o backend da aplicação.
+>
+> As chamadas para a API da Groq devem ser realizadas pelas **Supabase Edge Functions**, mantendo a chave da IA protegida no servidor. Nunca exponha chaves privadas diretamente no frontend ou em arquivos versionados.
+
+## 5. Execute o projeto
+
+```bash
+npm run dev
+```
+
+Após iniciar o servidor, acesse:
+
+```text
+http://localhost:5173
+```
+
+---
+
+# ☁️ Deploy na Vercel
+
+O projeto está preparado para deploy utilizando a Vercel.
+
+## Passo 1
+
+Importe este repositório para sua conta da Vercel.
+
+## Passo 2
+
+Durante a configuração do projeto, adicione as seguintes Environment Variables:
+
+```env
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
+```
 
-Deploy automático será acionado após o push.
+Utilize exatamente os mesmos valores configurados no ambiente local.
 
-O frontend é otimizado para Vercel. Certifique-se de que as Edge Functions do Supabase estejam configuradas e ativas.
-📄 Licença
-Este projeto está licenciado sob a MIT License.
+## Passo 3
 
-Desenvolvido com ❤️ para estudantes de idiomas que buscam excelência através da prática contextual.
-Contribuições são bem-vindas! Abra uma Issue ou envie um Pull Request.
+Conclua o deploy.
+
+A Vercel realizará automaticamente:
+
+* instalação das dependências;
+* build da aplicação;
+* publicação do projeto.
+
+> **Observação**
+>
+> As **Supabase Edge Functions** continuam sendo responsáveis pela comunicação segura com a API da Groq. Certifique-se de que as variáveis e segredos utilizados pelas Edge Functions estejam configurados no ambiente do Supabase para garantir o funcionamento correto da geração de frases.
+
+---
+
+# 📄 Licença
+
+Este projeto está distribuído sob a licença **MIT**.
+
+Sinta-se à vontade para estudar, modificar e utilizar o código de acordo com os termos da licença.
+
+---
+
+<sub>Desenvolvido com foco em aprendizado de idiomas, arquitetura moderna e integração segura entre frontend, backend serverless e Inteligência Artificial.</sub>
