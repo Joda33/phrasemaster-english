@@ -1,32 +1,62 @@
-# SentenceMiner 📖
+# PhraseMaster English / SentenceMiner
 
-O **SentenceMiner** é uma plataforma inteligente voltada para o aprendizado de idiomas, permitindo que estudantes criem e revisem frases reais contextualizadas a partir de vocabulário específico. Combinando o poder de modelos de linguagem avançados (LLMs) e técnicas de revisão espaçada (SRS), a ferramenta transforma o processo de mineração de frases em uma experiência ágil e eficaz.
+**Domine o inglês através de frases autênticas e contextualizadas.**  
+SentenceMiner é uma plataforma moderna de aprendizado de idiomas que gera frases personalizadas e imersivas usando IA, ajudando estudantes a expandir vocabulário e compreensão contextual de forma eficiente.
 
-![SentenceMiner Screenshot](Screenshot.png) 
-*(Dica: Substitua `screenshot.png` pelo nome do seu arquivo de imagem)*
+## ✨ Funcionalidades Principais
 
-## 🚀 Funcionalidades Principais
+- **Geração de frases contextualizadas** com a API da Groq para alta qualidade e velocidade.
+- **Interface intuitiva e responsiva** construída com React e Tailwind CSS.
+- **Armazenamento e autenticação seguros** via Supabase.
+- **Edge Functions** para processamento serverless eficiente e escalável.
+- **Foco em imersão**: frases reais, variadas e adaptadas ao nível do usuário.
+- **Experiência de aprendizado gamificada** e progressiva.
 
-* **Mineração via IA:** Geração de frases contextuais instantâneas usando a API da Groq.
-* **Aprendizado Ativo:** Adicione palavras que você deseja dominar e receba exemplos práticos com tradução.
-* **Sistema de Revisão Espaçada:** Algoritmo estilo Anki para garantir que você memorize o vocabulário no tempo certo.
-* **Gamificação:** Acompanhe seu progresso e suba no Ranking Semanal.
-* **Design Responsivo:** Interface moderna, otimizada para mobile e desktop.
+## 🛠 Stack Tecnológica
 
-## 🛠 Tecnologias Utilizadas
+### Frontend
+- **React** + **Vite** (build tool moderno e rápido)
+- **Tailwind CSS** (estilização utilitária e design responsivo)
 
-Este projeto foi construído utilizando um ecossistema moderno:
+### Backend / Banco de Dados
+- **Supabase** (PostgreSQL, autenticação e Edge Functions)
 
-- **Frontend:** React, Vite, TypeScript, Tailwind CSS, shadcn/ui.
-- **Backend/Edge:** Supabase Edge Functions (TypeScript).
-- **IA:** Groq API (Inference engine).
-- **Deploy:** Vercel.
+### IA
+- **Groq API** (inferência de LLM ultra-rápida para geração de conteúdo)
 
-## ⚙️ Configuração para Desenvolvimento
+### Deploy
+- **Vercel** (frontend) + Supabase (backend e edge functions)
 
-Para rodar o projeto localmente, siga estes passos:
+## 🚀 Configuração Local
 
-1. **Clone o repositório:**
-   ```bash
-   git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
-   cd SEU_REPOSITORIO
+### 1. Clone o repositório
+```bash
+git clone https://github.com/Joda33/phrasemaster-english.git
+cd phrasemaster-english
+2. Instale as dependências
+Bashnpm install
+3. Configure as variáveis de ambiente
+Crie um arquivo .env na raiz do projeto com o seguinte conteúdo:
+envVITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+# Opcional: outras chaves conforme necessário (ex: Groq API key se exposta no client-side)
+Importante: Mantenha as chaves de API (Supabase e Groq) seguras. Nunca commite o arquivo .env no repositório. As Edge Functions do Supabase lidam com chaves sensíveis no lado do servidor.
+4. Execute o projeto em modo desenvolvimento
+Bashnpm run dev
+A aplicação estará disponível em http://localhost:5173 (padrão do Vite).
+🌐 Deploy na Vercel
+
+Faça fork ou importe o repositório diretamente na Vercel.
+Conecte o projeto ao seu repositório GitHub.
+Na seção Environment Variables, adicione:
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+
+Deploy automático será acionado após o push.
+
+O frontend é otimizado para Vercel. Certifique-se de que as Edge Functions do Supabase estejam configuradas e ativas.
+📄 Licença
+Este projeto está licenciado sob a MIT License.
+
+Desenvolvido com ❤️ para estudantes de idiomas que buscam excelência através da prática contextual.
+Contribuições são bem-vindas! Abra uma Issue ou envie um Pull Request.
