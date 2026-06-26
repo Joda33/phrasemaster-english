@@ -2,7 +2,7 @@
 
 O **SentenceMiner** é uma plataforma inteligente voltada para o aprendizado de idiomas, permitindo que estudantes criem e revisem frases reais contextualizadas a partir de vocabulário específico. Combinando o poder de modelos de linguagem avançados (LLMs) e técnicas de revisão espaçada (SRS), a ferramenta transforma o processo de mineração de frases em uma experiência ágil e eficaz.
 
-![SentenceMiner Screenshot](screenshot.png) 
+![SentenceMiner Screenshot](Screenshot.png) 
 *(Dica: Substitua `screenshot.png` pelo nome do seu arquivo de imagem)*
 
 ## 🚀 Funcionalidades Principais
